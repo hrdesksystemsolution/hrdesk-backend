@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Service Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .menu-section {
+            background: white;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .menu-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        .menu-item:hover {
+            background-color: #f9f9f9;
+        }
+        .menu-name {
+            font-weight: bold;
+            color: #4a3c8c;
+        }
+        .menu-file {
+            color: #666;
+            font-size: 12px;
+        }
+        .submenu {
+            background-color: #f9f9f9;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .submenu.open {
+            max-height: 500px;
+        }
+        .submenu-item {
+            padding: 10px 15px 10px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #555;
+            cursor: pointer;
+        }
+        .submenu-item:hover {
+            background-color: #efefef;
+        }
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #4a3c8c;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .expand-btn.open {
+            transform: rotate(90deg);
+        }
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Menu Service Test - HRDesk</h1>
+        
+        <div class="stats">
+            <p><strong>Total Menus:</strong> <span id="total">0</span></p>
+            <p><strong>Menus with Submenus:</strong> <span id="withSubmenus">0</span></p>
+            <p><strong>Status:</strong> <span id="status" style="color: orange;">Loading...</span></p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="loading" class="loading">Loading menus...</div>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        async function loadMenus() {
+            try {
+                const response = await fetch('http://localhost:8000/menu-service.php?action=getMenus');
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load menus');
+                }
+
+                const menus = data.data || [];
+                const content = document.getElementById('content');
+                const loadingDiv = document.getElementById('loading');
+                const errorDiv = document.getElementById('error');
+
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+
+                // Update stats
+                document.getElementById('total').textContent = menus.length;
+                const menusWithSubmenus = menus.filter(m => m.submenus && m.submenus.length > 0).length;
+                document.getElementById('withSubmenus').textContent = menusWithSubmenus;
+                document.getElementById('status').textContent = '✓ Successfully loaded';
+                document.getElementById('status').style.color = 'green';
+
+                // Render menus
+                content.innerHTML = '';
+                menus.forEach((menu, index) => {
+                    const menuDiv = document.createElement('div');
+                    menuDiv.className = 'menu-section';
+
+                    const menuHeader = document.createElement('div');
+                    menuHeader.className = 'menu-item';
+                    menuHeader.style.cursor = menu.submenus && menu.submenus.length > 0 ? 'pointer' : 'default';
+
+                    const menuInfo = document.createElement('div');
+                    menuInfo.innerHTML = `
+                        <div class="menu-name">${menu.mnuname}</div>
+                        <div class="menu-file">${menu.filename || 'N/A'}</div>
+                    `;
+
+                    const rightSide = document.createElement('div');
+                    rightSide.style.display = 'flex';
+                    rightSide.style.alignItems = 'center';
+                    rightSide.style.gap = '15px';
+
+                    if (menu.submenus && menu.submenus.length > 0) {
+                        const badge = document.createElement('span');
+                        badge.style.background = '#4a3c8c';
+                        badge.style.color = 'white';
+                        badge.style.padding = '4px 8px';
+                        badge.style.borderRadius = '4px';
+                        badge.style.fontSize = '12px';
+                        badge.textContent = menu.submenus.length + ' items';
+                        rightSide.appendChild(badge);
+
+                        const btn = document.createElement('button');
+                        btn.className = 'expand-btn';
+                        btn.textContent = '›';
+                        rightSide.appendChild(btn);
+                    }
+
+                    menuHeader.appendChild(menuInfo);
+                    menuHeader.appendChild(rightSide);
+                    menuDiv.appendChild(menuHeader);
+
+                    // Add submenus if available
+                    if (menu.submenus && menu.submenus.length > 0) {
+                        const submenuDiv = document.createElement('div');
+                        submenuDiv.className = 'submenu';
+
+                        menu.submenus.forEach(submenu => {
+                            const submenuItem = document.createElement('div');
+                            submenuItem.className = 'submenu-item';
+                            submenuItem.textContent = submenu.mnuname;
+                            submenuDiv.appendChild(submenuItem);
+                        });
+
+                        menuDiv.appendChild(submenuDiv);
+
+                        // Toggle submenu on click
+                        menuHeader.addEventListener('click', () => {
+                            submenuDiv.classList.toggle('open');
+                            const btn = menuHeader.querySelector('.expand-btn');
+                            if (btn) btn.classList.toggle('open');
+                        });
+                    }
+
+                    content.appendChild(menuDiv);
+                });
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '❌ Error: ' + error.message;
+                document.getElementById('status').textContent = '✗ Error loading';
+                document.getElementById('status').style.color = 'red';
+                console.error('Error:', error);
+            }
+        }
+
+        // Load menus when page loads
+        window.addEventListener('load', loadMenus);
+    </script>
+</body>
+</html>
