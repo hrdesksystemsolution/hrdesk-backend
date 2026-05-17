@@ -10,6 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Configure SSH for legacy algorithms
+        run: |
+          mkdir -p ~/.ssh
+          cat > ~/.ssh/config << 'EOF'
+          Host *
+            HostKeyAlgorithms +ssh-rsa,ssh-dss
+            PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
+          EOF
+          chmod 600 ~/.ssh/config
+
       - name: Deploy files to server
         uses: easingthemes/ssh-deploy@main
         env:
