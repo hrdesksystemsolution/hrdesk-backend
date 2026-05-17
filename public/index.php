@@ -9,11 +9,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$db_host   = 'localhost';
-$db_name   = getenv('DB_DATABASE') ?: 'hrdesk1_eeipl';
-$db_user   = getenv('DB_USERNAME') ?: 'hrdesk1_user1';
-$db_pass   = getenv('DB_PASSWORD') ?: '';
-$jwt_secret = getenv('JWT_SECRET') ?: 'fallback_secret_key';
+// Parse .env file manually (getenv() doesn't read .env files)
+$env = array();
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $val) = explode('=', $line, 2);
+            $env[trim($key)] = trim($val);
+        }
+    }
+}
+
+$db_host    = isset($env['DB_HOST'])     ? $env['DB_HOST']     : '127.0.0.1';
+$db_name    = isset($env['DB_DATABASE']) ? $env['DB_DATABASE'] : 'hrdesk1_eeipl';
+$db_user    = isset($env['DB_USERNAME']) ? $env['DB_USERNAME'] : 'hrdesk1_user1';
+$db_pass    = isset($env['DB_PASSWORD']) ? $env['DB_PASSWORD'] : '';
+$jwt_secret = isset($env['JWT_SECRET'])  ? $env['JWT_SECRET']  : 'fallback_secret_key';
 
 function getDB($host, $name, $user, $pass) {
     try {

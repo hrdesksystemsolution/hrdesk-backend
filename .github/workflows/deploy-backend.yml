@@ -27,7 +27,7 @@ jobs:
             echo "APP_DEBUG=true"
             echo "APP_URL=https://hrdesk.live/hrdesk_new/service"
             echo "DB_CONNECTION=mysql"
-            echo "DB_HOST=localhost"
+            echo "DB_HOST=127.0.0.1"
             echo "DB_PORT=3306"
             echo "DB_DATABASE=${{ secrets.DB_DATABASE }}"
             echo "DB_USERNAME=${{ secrets.DB_USERNAME }}"
