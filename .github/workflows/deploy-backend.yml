@@ -18,6 +18,30 @@ jobs:
       - name: Install composer dependencies
         run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
+      - name: Create production .env
+        run: |
+          cat > .env << EOF
+          APP_NAME=HRDesk
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=https://hrdesk.live/hrdesk_new/service
+
+          DB_CONNECTION=mysql
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+          LOG_CHANNEL=single
+          CACHE_DRIVER=file
+          SESSION_DRIVER=file
+          QUEUE_DRIVER=sync
+          EOF
+
       - name: Configure SSH for legacy algorithms
         run: |
           mkdir -p ~/.ssh
