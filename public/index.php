@@ -126,7 +126,18 @@ if ($uri === '/api/auth/logout' && $method === 'POST') {
 }
 
 // Auth check for protected routes
-$authHeader = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
+// Apache often strips Authorization header — use multiple fallbacks
+$authHeader = '';
+if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+} elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+    $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+} elseif (function_exists('apache_request_headers')) {
+    $headers = apache_request_headers();
+    if (!empty($headers['Authorization'])) {
+        $authHeader = $headers['Authorization'];
+    }
+}
 $token      = str_replace('Bearer ', '', $authHeader);
 $payload    = verifyToken($token, $jwt_secret);
 
