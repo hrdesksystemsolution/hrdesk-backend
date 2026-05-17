@@ -10,6 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install composer dependencies
+        run: composer install --no-dev --optimize-autoloader
+
       - name: Configure SSH for legacy algorithms
         run: |
           mkdir -p ~/.ssh
@@ -29,15 +37,3 @@ jobs:
           REMOTE_HOST: ${{ secrets.SSH_HOST }}
           REMOTE_USER: ${{ secrets.SSH_USERNAME }}
           TARGET: "/home/hrdesk1/public_html/hrdesk_new/service"
-
-      - name: Install composer dependencies
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/hrdesk1/public_html/hrdesk_new/service
-            composer install --no-dev --optimize-autoloader
-            php artisan config:cache
-            php artisan route:cache
